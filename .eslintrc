@@ -1,0 +1,12 @@
+{
+  "parser": "babel-eslint",
+  "extends": "airbnb-base",
+  "ecmaFeatures": {
+    "classes": true
+  },
+  "rules": {
+    "comma-dangle": 0,
+    "indent": [2, 2, {"SwitchCase": 1}],
+    "max-len": 0,
+  }
+}
