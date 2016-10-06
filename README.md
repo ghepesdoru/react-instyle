@@ -1,2 +1,2 @@
 # react-instyle
-CSS/SCSS/SASS to JS or React style object
+CSS and SASS/SCSS to javascript plain object or react native StyleSheet convertor.
