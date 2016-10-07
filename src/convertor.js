@@ -1,6 +1,7 @@
 import CSS from 'css';
-import SASS from 'node-sass';
 import nodeBuffer from 'buffer';
+import SASS from 'sass.js';
+import { Promise } from 'bluebird';
 import { Item } from './item';
 import { List } from './list';
 
@@ -587,6 +588,17 @@ export class Convertor {
     this.includePaths = [];
     this.indentation = 2;
     this.stringDelimiter = '\'';
+
+    // Configure sass.js
+    SASS.options({
+      style: SASS.style.expanded,
+      comments: true,
+      sourceMapFile: null,
+      sourceMapRoot: null,
+      sourceMapContents: false,
+      sourceMapEmbed: false,
+      sourceMapOmitUrl: true
+    });
   }
 
   // Allow usage of specified indentation for the output code
@@ -601,11 +613,92 @@ export class Convertor {
 
   // Allow setting the include paths array for all SASS/SCSS @import definitions
   setIncludePath(paths) {
+    let changed = false;
+
     if (paths && paths.forEach) {
-      this.includePaths = paths.filter(p => p && p.toLowerCase && p.length);
+      const sanitizedPaths = paths.filter(p => p && p.toLowerCase && p.trim().length).map(p => p.trim());
+
+      if (sanitizedPaths.length) {
+        sanitizedPaths.forEach((p) => {
+          if (this.includePaths.indexOf(p) === -1) {
+            this.includePaths.push(p);
+          }
+        });
+
+        changed = true;
+      }
+    } else if (paths && paths.toLowerCase) {
+      const p = paths.trim();
+
+      if (p.length > 0) {
+        this.includePaths.push(p);
+        changed = true;
+      }
     }
 
-    return false;
+    if (changed) {
+      // Configure sass.js importer function
+      const dependencyCache = {};
+      const includePaths = this.includePaths;
+
+      SASS.importer(function resolveFileImports(request, done) { // eslint-disable-line prefer-arrow-callback
+        const nodeFs = require('fs'); // eslint-disable-line global-require
+        const nodePath = require('path'); // eslint-disable-line global-require
+
+        if (request.path || !request.current) {
+          // Sass.js already found a file,
+          // we probably want to just load that
+          done();
+        } else if (request.current) {
+          // Search for the specified file in all include path locations
+          const filePath = request.current;
+
+          // Return the cached version of the file
+          if (dependencyCache[filePath]) {
+            done(dependencyCache[filePath]);
+          } else {
+            // Grab the file before returning
+            const len = includePaths.length;
+            let found;
+
+            for (let i = 0; i < len; i += 1) {
+              const path = includePaths[i];
+              const testPaths = [
+                nodePath.join(`${path}/`, `${filePath}.sass`), // SASS normal file
+                nodePath.join(`${path}/`, `${filePath}.scss`), // SCSS normal file
+                nodePath.join(`${path}/`, `_${filePath}.sass`), // SASS import only segment
+                nodePath.join(`${path}/`, `_${filePath}.scss`) // SCSS import only segment
+              ];
+
+              for (let j = 0; j < 4; j += 1) {
+                try {
+                  found = dependencyCache[filePath] = {
+                    content: nodeFs.readFileSync(testPaths[j], { encoding: 'UTF-8' })
+                  };
+                  break;
+                } catch (e) {
+                  // Ignored error
+                }
+              }
+
+              if (found) {
+                break;
+              }
+            }
+
+            // Return the found version of the file
+            if (found) {
+              done(found);
+            } else {
+              // Let the parser error
+              done();
+            }
+          }
+        }
+      });
+    }
+
+    return changed;
   }
 
   // Delimits a string with specified notation
@@ -642,25 +735,26 @@ export class Convertor {
 
     // Convert SASS/SCSS to CSS
     if (Convertor.supportedFormats.transformation[format]) {
-      try {
-        const parsed = SASS.renderSync({
-          data: input,
-          includePaths: this.includePaths,
-          outputStyle: 'expanded'
-        });
+      return new Promise((resolve) => {
+        SASS.compile(input, (result) => {
+          if (result.status === 0) {
+            resolve(this.convert(result.text, format, how));
+          } else {
+            errors.push({
+              type: `${format} conversion`,
+              file: result.file,
+              line: result.line,
+              column: result.column,
+              message: result.message
+            });
 
-        input = parsed.css.toString();
-      } catch (e) {
-        errors.push({
-          type: `${format} conversion`,
-          file: e.file,
-          line: e.line,
-          column: e.column,
-          message: e.message
+            resolve({
+              formatted: '',
+              errors
+            });
+          }
         });
-
-        input = '';
-      }
+      });
     }
 
     // Parse CSS into a rule set
@@ -682,10 +776,10 @@ export class Convertor {
       list = Convertor.transform(parsed);
     }
 
-    return {
+    return Promise.resolve({
       formatted: errors.length === 0 ? `${Convertor.outputFormats[how].prefix}${this.to(list)}${Convertor.outputFormats[how].suffix}` : '',
       errors
-    };
+    });
   }
 
   // Outputs the List portion into the specified format

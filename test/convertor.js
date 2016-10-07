@@ -421,60 +421,78 @@ describe('SASS/SCSS/CSS Convertor', () => {
 
       it('Converts CSS to JS file', () => {
         const converted = c.convert(input, 'css', 'javascript_file');
-        assert.equal(converted.errors.length, 0);
-        assert.equal(converted.formatted, `module.exports = {${output}};`);
+        converted.then((conv) => {
+          assert.equal(conv.errors.length, 0);
+          assert.equal(conv.formatted, `module.exports = {${output}};`);
+        });
       });
 
       it('Converts CSS to JS', () => {
         const converted = c.convert(input, 'css', 'javascript');
-        assert.equal(converted.errors.length, 0);
-        assert.equal(converted.formatted, `{${output}};`);
+        converted.then((conv) => {
+          assert.equal(conv.errors.length, 0);
+          assert.equal(conv.formatted, `{${output}};`);
+        });
       });
 
       it('Converts CSS to React file', () => {
         const converted = c.convert(input, 'css', 'react_file');
-        assert.equal(converted.errors.length, 0);
-        assert.equal(converted.formatted, `import React, {StyleSheet, Dimensions, PixelRatio} from "react-native";
+        converted.then((conv) => {
+          assert.equal(conv.errors.length, 0);
+          assert.equal(conv.formatted, `import React, {StyleSheet, Dimensions, PixelRatio} from "react-native";
 
 export default StyleSheet.create({${output}})`);
+        });
       });
 
       it('Converts CSS to React', () => {
         const converted = c.convert(input, 'css', 'react');
-        assert.equal(converted.errors.length, 0);
-        assert.equal(converted.formatted, `{${output}};`);
+        converted.then((conv) => {
+          assert.equal(conv.errors.length, 0);
+          assert.equal(conv.formatted, `{${output}};`);
+        });
       });
 
       it('Converts Buffer to JS', () => {
         const converted = c.convert(new Buffer(input), 'css', 'javascript');
-        assert.equal(converted.errors.length, 0);
-        assert.equal(converted.formatted, `{${output}};`);
+        converted.then((conv) => {
+          assert.equal(conv.errors.length, 0);
+          assert.equal(conv.formatted, `{${output}};`);
+        });
       });
 
       it('Converts SCSS to JS', () => {
         const converted = c.convert(inputSCSS, 'scss', 'javascript');
-        assert.equal(converted.errors.length, 0);
-        assert.equal(converted.formatted, `{${outputSCSS}};`);
+        converted.then((conv) => {
+          assert.equal(conv.errors.length, 0);
+          assert.equal(conv.formatted, `{${outputSCSS}};`);
+        });
       });
 
       it('Converts SCSS to JS taking imports into account - without specified include path', () => {
         const converted = c.convert(inputSCSSImport, 'scss', 'javascript');
-        assert.equal(converted.errors.length, 1);
-        assert.equal(converted.formatted, '');
-        assert.deepEqual(converted.errors[0], {
-          type: 'scss conversion',
-          file: Convertor.UNKNOWN_SOURCE,
-          line: 2,
-          column: 9,
-          message: 'File to import not found or unreadable: defaults\nParent style sheet: stdin'
+        converted.then((conv) => {
+          assert.equal(conv.errors.length, 1);
+          assert.equal(conv.formatted, '');
+          assert.deepEqual(conv.errors[0], {
+            type: 'scss conversion',
+            file: Convertor.UNKNOWN_SOURCE,
+            line: 2,
+            column: 9,
+            message: 'File to import not found or unreadable: defaults\nParent style sheet: stdin'
+          });
         });
       });
 
       it('Converts SCSS to JS taking imports into account - specified include path', () => {
-        c.setIncludePath([__dirname]);
+        const addedIncludePath = c.setIncludePath([__dirname]);
+        assert.equal(addedIncludePath, true);
+
         const converted = c.convert(inputSCSSImport, 'scss', 'javascript');
-        assert.equal(converted.errors.length, 0);
-        assert.equal(converted.formatted, `{${outputSCSS}};`);
+        converted.then((conv) => {
+          assert.equal(conv.errors.length, 0);
+          assert.equal(conv.formatted, `{${outputSCSS}};`);
+        });
       });
 
       it('Does not convert without a valid input type', () => {
@@ -515,14 +533,16 @@ export default StyleSheet.create({${output}})`);
 
       it('Does catch CSS parsing errors', () => {
         const converted = c.convert('.random{\\}', 'css', 'javascript');
-        assert.equal(converted.errors.length, 1);
-        assert.equal(converted.formatted, '');
-        assert.deepEqual(converted.errors[0], {
-          type: 'css conversion',
-          file: Convertor.UNKNOWN_SOURCE,
-          line: 1,
-          column: 10,
-          message: 'property missing \':\': }'
+        converted.then((conv) => {
+          assert.equal(conv.errors.length, 1);
+          assert.equal(conv.formatted, '');
+          assert.deepEqual(conv.errors[0], {
+            type: 'css conversion',
+            file: Convertor.UNKNOWN_SOURCE,
+            line: 1,
+            column: 10,
+            message: 'property missing \':\': }'
+          });
         });
       });
     });
