@@ -588,6 +588,7 @@ export class Convertor {
     this.includePaths = [];
     this.indentation = 2;
     this.stringDelimiter = '\'';
+    this.forceEscapeProperty = true;
 
     // Configure sass.js
     SASS.options({
@@ -603,6 +604,10 @@ export class Convertor {
   // Allow usage of custom string delimiters (to allow ' and ")
   setStringDelimiter(delimiter) {
     this.stringDelimiter = delimiter;
+  }
+
+  alwaysEscapeProperties(status) {
+    this.forceEscapeProperty = !!status;
   }
 
   // Allow setting the include paths array for all SASS/SCSS @import definitions
@@ -698,6 +703,19 @@ export class Convertor {
   // Delimits a string with specified notation
   delimitString(s) {
     return this.stringDelimiter + s + this.stringDelimiter;
+  }
+
+  delimitProperty(p) {
+    if (this.forceEscapeProperty) {
+      return this.delimitString(p);
+    }
+
+    const prop = p.trim();
+    if (prop.indexOf(' ') === -1) {
+      return prop;
+    }
+
+    return this.delimitString(prop);
   }
 
   // Converts input data to one of supported formats (plain object or react stylesheet)
@@ -803,19 +821,19 @@ export class Convertor {
           break;
 
         case Item.TYPE_PROPERTY:
-          output.push(`${this.delimitString(f.key())}: ${this.manageProp(f.key(), f.value())}`);
+          output.push(`${this.delimitProperty(f.key())}: ${this.manageProp(f.key(), f.value())}`);
           break;
 
         case Item.TYPE_LIST:
-          output.push(`${this.delimitString(f.key())}: ${this.to(f.value(), indent + this.indentation)}`);
+          output.push(`${this.delimitProperty(f.key())}: ${this.to(f.value(), indent + this.indentation)}`);
           break;
 
         case Item.TYPE_FONT_FACE:
-          output.push(`${this.delimitString('fontFace')}: ${this.to(f.value(), indent + this.indentation)}`);
+          output.push(`${this.delimitProperty('fontFace')}: ${this.to(f.value(), indent + this.indentation)}`);
           break;
 
         case Item.TYPE_IMPORT:
-          output.push(`${this.delimitString('import')}: ${this.delimitString(f.value())}`);
+          output.push(`${this.delimitProperty('import')}: ${this.delimitString(f.value())}`);
           break;
 
         // case Item.TYPE_CUSTOM_MEDIA:
