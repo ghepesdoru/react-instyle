@@ -591,13 +591,7 @@ export class Convertor {
 
     // Configure sass.js
     SASS.options({
-      style: SASS.style.expanded,
-      comments: true,
-      sourceMapFile: null,
-      sourceMapRoot: null,
-      sourceMapContents: false,
-      sourceMapEmbed: false,
-      sourceMapOmitUrl: true
+      style: SASS.style.expanded
     });
   }
 
@@ -709,7 +703,6 @@ export class Convertor {
   // Converts input data to one of supported formats (plain object or react stylesheet)
   convert(data, inputFormat, outputFormat) {
     const errors = [];
-    let list;
 
     // Normalize output format
     const how = Convertor.normalizeString(outputFormat);
@@ -738,7 +731,7 @@ export class Convertor {
       return new Promise((resolve) => {
         SASS.compile(input, (result) => {
           if (result.status === 0) {
-            resolve(this.convert(result.text, format, how));
+            resolve(this.convert(result.text, 'css', how));
           } else {
             errors.push({
               type: `${format} conversion`,
@@ -758,23 +751,21 @@ export class Convertor {
     }
 
     // Parse CSS into a rule set
-    if (errors.length === 0) {
-      const parsed = CSS.parse(input, { silent: true });
+    const parsed = CSS.parse(input, { silent: true });
 
-      // Add errors if any
-      parsed.stylesheet.parsingErrors.forEach((e) => {
-        errors.push({
-          type: `${format} conversion`,
-          file: Convertor.UNKNOWN_SOURCE,
-          line: e.line,
-          column: e.column,
-          message: `${e.reason}: ${e.source}`
-        });
+    // Add errors if any
+    parsed.stylesheet.parsingErrors.forEach((e) => {
+      errors.push({
+        type: `${format} conversion`,
+        file: Convertor.UNKNOWN_SOURCE,
+        line: e.line,
+        column: e.column,
+        message: `${e.reason}: ${e.source}`
       });
+    });
 
-      // Extract Fields
-      list = Convertor.transform(parsed);
-    }
+    // Extract Fields
+    const list = Convertor.transform(parsed);
 
     return Promise.resolve({
       formatted: errors.length === 0 ? `${Convertor.outputFormats[how].prefix}${this.to(list)}${Convertor.outputFormats[how].suffix}` : '',
