@@ -1,6 +1,6 @@
 {
   "name": "react-instyle",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "SCSS/SASS/CSS to JS or React Native StyleSheet convertor",
   "main": "lib/index.js",
   "repository": {
