@@ -349,6 +349,20 @@ describe('SASS/SCSS/CSS Convertor', () => {
       });
     });
 
+    describe('Property name escapes on demand', () => {
+      const c = new Convertor();
+      c.alwaysEscapeProperties(false);
+
+      const input = ['abc', '$abc', '_abc', '2abc', '#a', 'ab-c', 'a bc'];
+      const out = ['abc', '$abc', '_abc', '\'2abc\'', '\'#a\'', '\'ab-c\'', '\'a bc\''];
+
+      input.forEach((v, i) => {
+        it(`handles: ${v}`, () => {
+          assert.equal(c.delimitProperty(v), out[i]);
+        });
+      });
+    });
+
     describe('Conversion', () => {
       const input = `
       @charset: "UTF-8";

@@ -118,6 +118,9 @@ export class Convertor {
   // URL testing regexp
   static URL_REGEXP = /(https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})/g;
 
+  // Valid unescaped variable names regex
+  static VARIABLE_REGEXP = /^[a-zA-Z_$][a-zA-Z_$0-9]+$/;
+
   // Normalize string parameters as string or undefined
   static normalizeString(v) {
     // v !== v means: NaN !== NaN (the only type in js that is not equal to itself)
@@ -727,7 +730,7 @@ export class Convertor {
     }
 
     const prop = p.trim();
-    if (prop.indexOf(' ') === -1) {
+    if (Convertor.VARIABLE_REGEXP.test(prop)) {
       return prop;
     }
 
