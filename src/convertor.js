@@ -765,7 +765,7 @@ export class Convertor {
       return new Promise((resolve) => {
         SASS.compile(input, (result) => {
           if (result.status === 0) {
-            resolve(this.convert(result.text, 'css', how));
+            resolve(this.convert(result.text || '', 'css', how));
           } else {
             errors.push({
               type: `${format} conversion`,

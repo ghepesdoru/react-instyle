@@ -286,7 +286,8 @@ const output = `'body': {
     'color': '#26ADE4',
     'visibility': 'visible !important'
   }
-});`;
+});
+`;
 
 describe('Complex conversions', () => {
   it('Converts a border', () => {

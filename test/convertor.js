@@ -423,7 +423,8 @@ describe('SASS/SCSS/CSS Convertor', () => {
         const converted = c.convert(input, 'css', 'javascript_file');
         converted.then((conv) => {
           assert.equal(conv.errors.length, 0);
-          assert.equal(conv.formatted, `module.exports = {${output}};`);
+          assert.equal(conv.formatted, `module.exports = {${output}};
+`);
         });
       });
 
@@ -441,7 +442,8 @@ describe('SASS/SCSS/CSS Convertor', () => {
           assert.equal(conv.errors.length, 0);
           assert.equal(conv.formatted, `import { StyleSheet } from 'react-native';
 
-export default StyleSheet.create({${output}});`);
+export default StyleSheet.create({${output}});
+`);
         });
       });
 
