@@ -577,11 +577,11 @@ export class Convertor {
     this.outputFormats = {
       javascript_file: {
         prefix: 'module.exports = ',
-        suffix: ';'
+        suffix: ';\n'
       },
       react_file: {
         prefix: ['import { StyleSheet } from ', this.delimitString('react-native'), ';\n\nexport default StyleSheet.create('].join(''),
-        suffix: ');'
+        suffix: ');\n'
       },
       javascript: {
         prefix: '',
