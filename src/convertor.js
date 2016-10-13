@@ -754,7 +754,7 @@ export class Convertor {
     let input;
     if (nodeBuffer.Buffer.isBuffer(data)) {
       input = data.toString();
-    } else if (data && data.toLowerCase) {
+    } else if (String(data) === data) {
       input = data;
     } else {
       throw new Error('Invalid input data, Buffer or string expected.');
