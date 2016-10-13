@@ -1,4 +1,6 @@
 import CSS from 'css';
+import nodeFs from 'fs';
+import nodePath from 'path';
 import nodeBuffer from 'buffer';
 import SASS from 'sass.js';
 import { Promise } from 'bluebird';
@@ -65,55 +67,6 @@ export class Convertor {
 
   static propertiesCategories = {
     // TODO: Add animation related support also
-    dimensional: {
-      top: true,
-      bottom: true,
-      left: true,
-      right: true,
-
-      width: true,
-      minwidth: true,
-      maxwidth: true,
-      height: true,
-      minheight: true,
-      maxheight: true,
-
-      padding: true,
-      paddingtop: true,
-      paddingright: true,
-      paddingbottom: true,
-      paddingleft: true,
-
-      margintop: true,
-      marginright: true,
-      marginbottom: true,
-      marginleft: true,
-
-      border: true,
-      boderwidth: true,
-      borderbottom: true,
-      borderbottomwidth: true,
-      borderleft: true,
-      borderleftwidth: true,
-      bordertop: true,
-      bordertopwidth: true,
-      borderright: true,
-      borderrightwidth: true,
-
-      outline: true,
-      outlineoffset: true,
-      outlinewidth: true,
-
-      font: true,
-      fontsize: true,
-
-      lineheight: true,
-      letterspacing: true,
-
-      columngap: true,
-      columnrulewidth: true,
-      columnwidth: true
-    },
     vertical: {
       top: true,
       bottom: true,
@@ -139,6 +92,8 @@ export class Convertor {
       lineheight: true
     },
     horizontal: {
+      border: true,
+
       left: true,
       right: true,
 
@@ -163,23 +118,23 @@ export class Convertor {
       columnrulewidth: true,
       columnwidth: true
     },
-    boxModelShorthand: {
+    combined: {
+      // Combined sizes (vertical and horizontal alike)
+      padding: true,
       margin: true,
-      padding: true
+      boxshadow: true,
+      textshadow: true
     },
-    border: {
-      border: true,
-      boderwidth: true,
-      borderbottom: true,
-      borderbottomwidth: true,
-      borderleft: true,
-      borderleftwidth: true,
-      bordertop: true,
-      bordertopwidth: true,
-      borderright: true,
-      borderrightwidth: true
+    combinedDirections: {
+      padding: ['v', 'h', 'v', 'h'],
+      margin: ['v', 'h', 'v', 'h'],
+      boxshadow: ['h', 'v'],
+      textshadow: ['h', 'v']
     }
   };
+
+  // URL testing regexp
+  static URL_REGEXP = /(https?:\/\/(?:www\.|(?!www))[^\s\.]+\.[^\s]{2,}|www\.[^\s]+\.[^\s]{2,})/g;
 
   // Normalize string parameters as string or undefined
   static normalizeString(v) {
@@ -547,6 +502,10 @@ export class Convertor {
         // case 'supports':
         //   break;
 
+        case 'keyframes':
+          // TODO: Implement
+          break;
+
         default:
           throw new Error(`No implemented transformation for type: "${i.type}".`);
       }
@@ -570,11 +529,14 @@ export class Convertor {
     }
 
     if (!unit) {
-      if (!Convertor.validStringUnits[value.toLowerCase()]) {
-        v = parseFloat(value) || 0;
-      } else {
+      const numericValue = parseFloat(value);
+
+      // Check for string values
+      if (numericValue !== numericValue || Convertor.validStringUnits[value.toLowerCase()]) { // eslint-disable-line no-self-compare
         unit = 'string';
         v = value;
+      } else {
+        v = numericValue;
       }
     }
 
@@ -582,6 +544,30 @@ export class Convertor {
       unit,
       value: v
     };
+  }
+
+  // Generates objectual representation of a directory and all it's files and subfolders
+  static readDirSync(d) {
+    const paths = {};
+    let aux = [];
+
+    try {
+      aux = nodeFs.readdirSync(d);
+    } catch (e) {
+      // Ingore the error
+    }
+
+    aux.forEach((p) => {
+      const childPath = `${nodePath.join(d, p)}`;
+
+      if (nodeFs.lstatSync(childPath).isDirectory()) {
+        paths[p] = Convertor.readDirSync(childPath);
+      } else {
+        paths[p] = true;
+      }
+    });
+
+    return paths;
   }
 
   constructor() {
@@ -613,6 +599,7 @@ export class Convertor {
   // Allow setting the include paths array for all SASS/SCSS @import definitions
   setIncludePath(paths) {
     let changed = false;
+    const cachedPaths = {};
 
     if (paths && paths.forEach) {
       const sanitizedPaths = paths.filter(p => p && p.toLowerCase && p.trim().length).map(p => p.trim());
@@ -636,61 +623,88 @@ export class Convertor {
     }
 
     if (changed) {
+      // Recursivelly generate a map of all files and subfolders for each include path
+      this.includePaths.forEach((p) => {
+        cachedPaths[p] = Convertor.readDirSync(p);
+      });
+
       // Configure sass.js importer function
       const dependencyCache = {};
       const includePaths = this.includePaths;
+      const REGEXP = Convertor.URL_REGEXP;
 
       SASS.importer(function resolveFileImports(request, done) { // eslint-disable-line prefer-arrow-callback
-        const nodeFs = require('fs'); // eslint-disable-line global-require
-        const nodePath = require('path'); // eslint-disable-line global-require
+        const nodeFs = require('fs'); // eslint-disable-line global-require, no-shadow
+        const nodePath = require('path'); // eslint-disable-line global-require, no-shadow
+
+        // Search for the specified file in all include path locations
+        const filePath = request.current;
 
         if (request.path || !request.current) {
           // Sass.js already found a file,
           // we probably want to just load that
           done();
+        } else if (filePath.search(REGEXP) > -1) {
+          // Check for url requires and don't try to resolve them
+          done();
         } else if (request.current) {
-          // Search for the specified file in all include path locations
-          const filePath = request.current;
-
           // Return the cached version of the file
           if (dependencyCache[filePath]) {
             done(dependencyCache[filePath]);
           } else {
             // Grab the file before returning
             const len = includePaths.length;
+            let prefixSegments;
+            let possibleFile;
+            const fileName = nodePath.basename(filePath).split('.')[0];
             let found;
+            let cache;
+
+            if (request.previous === 'stdin') {
+              prefixSegments = nodePath.dirname(filePath).split(nodePath.sep).filter(v => v !== '.' && v !== '..');
+            } else {
+              prefixSegments = nodePath.dirname(request.previous).split(nodePath.sep);
+            }
 
             for (let i = 0; i < len; i += 1) {
-              const path = includePaths[i];
-              const testPaths = [
-                nodePath.join(`${path}/`, `${filePath}.sass`), // SASS normal file
-                nodePath.join(`${path}/`, `${filePath}.scss`), // SCSS normal file
-                nodePath.join(`${path}/`, `_${filePath}.sass`), // SASS import only segment
-                nodePath.join(`${path}/`, `_${filePath}.scss`) // SCSS import only segment
-              ];
+              cache = cachedPaths[includePaths[i]];
 
-              for (let j = 0; j < 4; j += 1) {
-                try {
+              // Check for path existence
+              prefixSegments.forEach((p) => { // eslint-disable-line no-loop-func
+                if (cache && cache[p]) {
+                  cache = cache[p];
+                } else {
+                  cache = null;
+                }
+              });
+
+              // If the path at least existed
+              if (cache) {
+                possibleFile = [
+                  nodePath.join(`${fileName}.sass`),  // SASS normal file
+                  nodePath.join(`${fileName}.scss`),  // SCSS normal file
+                  nodePath.join(`${fileName}.css`),   // CSS normal file
+                  nodePath.join(`_${fileName}.sass`), // SASS import only segment
+                  nodePath.join(`_${fileName}.scss`), // SCSS import only segment
+                  nodePath.join(`_${fileName}.css`)   // CSS import only segment
+                ].filter(p => cache[p])[0]; // eslint-disable-line no-loop-func
+
+                if (possibleFile) {
                   found = dependencyCache[filePath] = {
-                    content: nodeFs.readFileSync(testPaths[j], { encoding: 'UTF-8' })
+                    content: nodeFs.readFileSync(`${nodePath.join(includePaths[i], prefixSegments.join(nodePath.sep), possibleFile)}`, { encoding: 'UTF-8' })
                   };
-                  break;
-                } catch (e) {
-                  // Ignored error
                 }
               }
 
+              // Return the found version of the file
               if (found) {
+                done(found);
+                break;
+              } else {
+                // Let the parser error
+                done();
                 break;
               }
-            }
-
-            // Return the found version of the file
-            if (found) {
-              done(found);
-            } else {
-              // Let the parser error
-              done();
             }
           }
         }
@@ -871,24 +885,87 @@ export class Convertor {
   adaptSize(value, direction) {
     const parsedVal = Convertor.asRelativeDescriptor(value);
     const prefix = direction === 'v' ? 'V' : 'H';
+    const unitProp = this.delimitProperty('unit');
+    const valueProp = this.delimitProperty('value');
 
     switch (parsedVal.unit) {
       case Convertor.UNIT_EM:
       case Convertor.UNIT_REM:
       case Convertor.UNIT_VH:
       case Convertor.UNIT_VW:
-        return `{ unit: ${this.delimitString(parsedVal.unit)}, value: ${parsedVal.value} }`;
+        return `{ ${unitProp}: ${this.delimitString(parsedVal.unit)}, ${valueProp}: ${parsedVal.value} }`;
 
       case Convertor.UNIT_PERCENTAGE:
-        return `{ unit: ${this.delimitString(parsedVal.unit + prefix)}, value: ${parsedVal.value / 100} }`;
+        return `{ ${unitProp}: ${this.delimitString(parsedVal.unit + prefix)}, ${valueProp}: ${parsedVal.value / 100} }`;
 
       case Convertor.UNIT_STRING:
-        return `{ unit: ${this.delimitString('string')}, value: ${this.delimitString(parsedVal.value)} }`;
+        return `{ ${unitProp}: ${this.delimitString('string')}, ${valueProp}: ${this.delimitString(parsedVal.value)} }`;
 
       default:
         // Return pixel values as is
-        return `{ unit: ${this.delimitString('px')}, value: ${parsedVal.value} }`;
+        return `{ ${unitProp}: ${this.delimitString('px')}, ${valueProp}: ${parsedVal.value} }`;
     }
+  }
+
+  // Given a string input extracts all units out of the string, adapts them using adaptSize and returns the resulting array
+  toAdaptableSize(value, direction, propType) {
+    const parts = [];
+    let part = [];
+    const len = value.length;
+    let lastOpen = -1;
+    let nrOfOpen = 0;
+
+    for (let i = 0; i < len; i += 1) {
+      if (value[i] === ' ' && lastOpen === -1) {
+        parts.push(part.join(''));
+        part = [];
+      } else if (value[i] === '(') {
+        if (nrOfOpen === 0) {
+          lastOpen = i;
+        }
+
+        nrOfOpen += 1;
+        part.push(value[i]);
+      } else if (value[i] === ')') {
+        nrOfOpen -= 1;
+
+        if (nrOfOpen === 0) {
+          lastOpen = -1;
+
+          part.push(value[i]);
+          parts.push(part.join(''));
+        } else {
+          part.push(value[i]);
+        }
+      } else {
+        part.push(value[i]);
+      }
+
+      if (i === len - 1) {
+        if (parts[parts.length - 1] !== part.join('')) {
+          parts.push(part.join(''));
+        }
+      }
+    }
+
+    if (direction === 'c') {
+      // Normalize the number of parts
+      const partsLen = parts.length;
+
+      if (partsLen === 1) {
+        parts[1] = parts[2] = parts[3] = parts[0];
+      } else if (partsLen === 2) {
+        parts[2] = parts[0];
+        parts[3] = parts[1];
+      } else if (partsLen === 3) {
+        parts[3] = parts[1];
+      }
+
+      const directions = Convertor.propertiesCategories.combinedDirections[propType];
+      return `[${parts.map((p, i) => this.adaptSize(p, directions[i] || 'h')).join(', ')}]`;
+    }
+
+    return `[${parts.map(p => this.adaptSize(p, direction)).join(', ')}]`;
   }
 
   // Given the type of a property it takes care of it's value conversion to output string
@@ -896,15 +973,11 @@ export class Convertor {
     const all = Convertor.propertiesCategories;
     const t = type.toLowerCase();
 
-    // Check for dimensional adaptation required in the output for dimensional properties
-    if (all.dimensional[t]) {
-      // Check if it a direct horizonal or vertical based rule
-      if (all.vertical[t] || all.horizontal[t]) {
-        return this.adaptSize(value, all.vertical[t] && 'v');
-      // } else {
-        // Special cases go here
-        // REVIEW: Review any special cases like border etc.
-      }
+    const direction = (all.vertical[t] && 'v') || (all.horizontal[t] && 'h') || (all.combined[t] && 'c') || null;
+
+    // Adapt properties requiring conversion
+    if (direction) {
+      return this.toAdaptableSize(value, direction, t);
     }
 
     // No transformation required? Return the quoted string

@@ -1,0 +1,271 @@
+@import 'https://fonts.googleapis.com/css?family=Droid+Sans';
+@import 'https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900';
+@import 'font-awesome/scss/font-awesome.scss';
+
+$logoGreen: #2fcf41;
+$buttonColorSave: #26ADE4;
+$buttonColorCancel: #CC2A41;
+$buttonColorDisabled: #CACACA;
+$textColor: #ffffff;
+$badgeColorOne: #CC2A41;
+$badgeColorTwo: #30a043;
+$color: #26ADE4;
+
+body {
+	font-family: 'Roboto', sans-serif;
+}
+.nav {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	margin: 0px;
+	padding: 0px;
+	height: 50px;
+	background-color: #303f44;
+	border-bottom: 3px solid #6a7d84;
+	box-shadow: 0 2px 5px 1px rgba(0,0,0,0.2);
+	div.logo {
+		width: 70px;
+		height: 50px;
+		float: left;
+		padding-top: 1px;
+		img {
+			width: 44px;
+		}
+	}
+	ul {
+		float:left;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	li {
+		cursor: pointer;
+		display: inline-block;
+		div.label {
+			&:hover {
+    			border-bottom: 3px solid $logoGreen;
+			}
+			border-bottom: 3px solid rgba(255, 255, 255, 0);
+			width: 110px;
+			float: left;
+			overflow: hidden;
+			height: 50px;
+			text-align: center;
+			span.label {
+				&:hover {
+        			color: $logoGreen;
+				}
+				padding: 0 10px 0 10px;
+				font-weight: 400;
+				color: #ffffff;
+				font-size: 15px;
+				-webkit-font-smoothing: antialiased;
+				display: inline-block;
+  				vertical-align: middle;
+  				line-height: 65px;
+  				text-shadow: 1px 1px 1px rgba(150, 150, 150, 0.29);
+			}
+		}
+		div.icon {
+			padding-top:10px;
+			float:left;
+			overflow: hidden;
+			height: 50px;
+			font-size: 35px;
+			margin-left: -105px;
+		}
+		i.menu {
+			margin-top: 4px;
+			opacity: 0.1;
+			color: #93c4ff;
+		}
+	}
+	a {
+		display: block;
+		padding: 6px 12px;
+		text-decoration: none;
+	}
+	div.user {
+		float:right;
+		width: 250px;
+		height: 50px;
+		color: $textColor;
+		font-size: 1em;
+		-webkit-font-smoothing: antialiased;
+		font-weight: 400;
+		div.username {
+			padding-left: 10px;
+			padding-right: 10px;
+			float: left;
+			line-height: 60px;
+		}
+		div.badge-type-one {
+			cursor: pointer;
+			margin:17px 2px;
+		    padding: 2px 10px;
+		    float: left;
+		    font-size: 0.8em;
+		    -webkit-font-smoothing: antialiased;
+		    font-weight: 400;
+		    background-color: $badgeColorOne;
+		    border-radius: 10px;
+		    height: 16px;
+		}
+		div.badge-type-two {
+			cursor: pointer;
+			margin:17px 2px;
+		    padding: 2px 10px;
+		    float: left;
+		    font-size: 0.8em;
+		    -webkit-font-smoothing: antialiased;
+		    font-weight: 400;
+		    background-color: $badgeColorTwo;
+		    border-radius: 10px;
+		    height: 16px;
+		}
+	}
+}
+
+button.save {
+	border: none;
+    color: white;
+    padding: 8px 12px;
+    text-align: center;
+    text-transform: uppercase;
+    display: inline-block;
+    font-size: 0.8em;
+    cursor: pointer;
+    border-radius: 3px;
+	-webkit-font-smoothing: antialiased;
+	font-weight: 400;
+	background-color: $buttonColorSave;
+  	width: 200px;
+  	margin-left: 25px;
+  	margin-top: 10px;
+  	box-shadow: 0 3px 6px 0 rgba(0,0,0,0.2);
+}
+button.cancel {
+	border: none;
+    color: white;
+    padding: 8px 12px;
+    text-align: center;
+    text-transform: uppercase;
+    display: inline-block;
+    font-size: 0.8em;
+    cursor: pointer;
+    border-radius: 3px;
+	-webkit-font-smoothing: antialiased;
+	font-weight: 400;
+	background-color: $buttonColorCancel;
+  	width: 200px;
+  	margin-left: 25px;
+  	margin-top: 10px;
+  	box-shadow: 0 3px 6px 0 rgba(0,0,0,0.2);
+}
+button.disabled {
+	border: none;
+    color: white;
+    padding: 8px 12px;
+    text-align: center;
+    text-transform: uppercase;
+    display: inline-block;
+    font-size: 0.8em;
+    cursor: not-allowed;
+    border-radius: 3px;
+	-webkit-font-smoothing: antialiased;
+	font-weight: 400;
+	background-color: $buttonColorDisabled;
+  	width: 200px;
+  	margin-left: 25px;
+  	margin-top: 10px;
+  	box-shadow: 0 3px 6px 0 rgba(0,0,0,0.2);
+}
+
+h1, input::-webkit-input-placeholder, button, label {
+	font-family: 'roboto', sans-serif;
+	-webkit-font-smoothing: antialiased;
+	font-weight: 400;
+}
+
+h1 {
+	height: 50px;
+	width: 100%;
+	font-size: 18px;
+	background: darken($color, 4%);
+	color: white;
+	line-height: 150%;
+	border-radius: 3px 3px 0 0;
+	box-shadow: 0 2px 5px 1px rgba(0,0,0,0.2);
+}
+
+form {
+	box-sizing: border-box;
+	width: 260px;
+	margin: 100px auto 0;
+	box-shadow: 2px 2px 5px 1px rgba(0,0,0,0.2);
+	padding-bottom: 40px;
+	border-radius: 3px;
+	h1 {
+		box-sizing: border-box;
+		padding: 12px;
+	}
+}
+
+label {
+	color: #5f5d5d;
+	margin: 0px 25px;
+	width: 200px;
+	display: block;
+	border: none;
+	padding: 10px 0;
+}
+
+input {
+	font-size:14px;
+	margin: 0px 25px;
+	width: 200px;
+	display: block;
+	border: none;
+	padding: 2px 0;
+	border-bottom: solid 1px $color;
+	color: #5f5d5d;
+	&:focus, &:valid {
+		box-shadow: none;
+		outline: none;
+		&::-webkit-input-placeholder {
+			color: $color;
+			visibility: visible !important;
+		}
+	}
+}
+
+label.checkbox {
+	float:left;
+	color: #5f5d5d;
+	margin: 0px 0px 0px 25px;
+	width: 150px;
+	display: block;
+	border: none;
+	padding: 10px 0;
+}
+input.checkbox {
+	float:left;
+	font-size:14px;
+	margin: 14px 0px 0px 25px;
+	width: 50px;
+	display: block;
+	border: none;
+	padding: 2px 0;
+	border-bottom: solid 1px $color;
+	color: darken($color, 20%);
+	&:focus, &:valid {
+		box-shadow: none;
+		outline: none;
+		&::-webkit-input-placeholder {
+			color: $color;
+			visibility: visible !important;
+		}
+	}
+}

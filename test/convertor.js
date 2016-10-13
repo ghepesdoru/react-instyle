@@ -270,10 +270,10 @@ describe('SASS/SCSS/CSS Convertor', () => {
             unit: null,
             value: 11
           },
-          unitless_fallback_to_zero: {
+          unitless_fallback_to_string: {
             in: 'abc',
-            unit: null,
-            value: 0
+            unit: 'string',
+            value: 'abc'
           }
         };
 
@@ -328,24 +328,24 @@ describe('SASS/SCSS/CSS Convertor', () => {
 
       ['px', 'em', 'rem', 'vh', 'vw'].forEach((t) => {
         it('em', () => {
-          assert.equal(c.adaptSize(`11${t}`, 'v'), `{ unit: '${t}', value: ${11} }`);
+          assert.equal(c.adaptSize(`11${t}`, 'v'), `{ 'unit': '${t}', 'value': ${11} }`);
         });
       });
 
       it('% vertically', () => {
-        assert.equal(c.adaptSize('11%', 'v'), '{ unit: \'%V\', value: 0.11 }');
+        assert.equal(c.adaptSize('11%', 'v'), '{ \'unit\': \'%V\', \'value\': 0.11 }');
       });
 
       it('% horizontally', () => {
-        assert.equal(c.adaptSize('11%', 'h'), '{ unit: \'%H\', value: 0.11 }');
+        assert.equal(c.adaptSize('11%', 'h'), '{ \'unit\': \'%H\', \'value\': 0.11 }');
       });
 
       it('string units - auto', () => {
-        assert.equal(c.adaptSize('auto', ''), '{ unit: \'string\', value: \'auto\' }');
+        assert.equal(c.adaptSize('auto', ''), '{ \'unit\': \'string\', \'value\': \'auto\' }');
       });
 
       it('defaults to px', () => {
-        assert.equal(c.adaptSize('11', 'h'), '{ unit: \'px\', value: 11 }');
+        assert.equal(c.adaptSize('11', 'h'), '{ \'unit\': \'px\', \'value\': 11 }');
       });
     });
 
@@ -383,7 +383,7 @@ describe('SASS/SCSS/CSS Convertor', () => {
         }
       `;
       const inputSCSSImport = `
-        @import "defaults";
+        @import "include/defaults";
         $defaultFont: randomFontInUse;
 
         .random {
@@ -402,17 +402,17 @@ describe('SASS/SCSS/CSS Convertor', () => {
   'import': 'https://developer.mozilla.org/en/docs/Web/CSS/@import',
   'random': {
     'color': 'red',
-    'width': { unit: 'em', value: 12 },
+    'width': [{ \'unit\': 'em', \'value\': 12 }],
     'screen&&>w300': {
       'backgroundColor': 'blue',
-      'width': { unit: '%H', value: 0.5 }
+      'width': [{ \'unit\': '%H', \'value\': 0.5 }]
     }
   }
 `;
       const outputSCSS = `
   'random': {
     'color': 'red',
-    'width': { unit: 'em', value: 12 },
+    'width': [{ \'unit\': 'em', \'value\': 12 }],
     'fontFamily': 'randomFontInUse'
   }
 `;
@@ -470,7 +470,7 @@ export default StyleSheet.create({${output}})`);
       });
 
       it('Converts SCSS to JS taking imports into account - without specified include path', () => {
-        const converted = c.convert(inputSCSSImport, 'scss', 'javascript');
+        const converted = c.convert(inputSCSSImport.replace('include/defaults', 'defaults'), 'scss', 'javascript');
         converted.then((conv) => {
           assert.equal(conv.errors.length, 1);
           assert.equal(conv.formatted, '');
