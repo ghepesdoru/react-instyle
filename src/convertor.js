@@ -37,24 +37,6 @@ export class Convertor {
 
   // Convertor output formats
   static OUTPUT_FORMAT_JS_FILE = 'javascript_file';
-  static outputFormats = {
-    javascript_file: {
-      prefix: 'module.exports = ',
-      suffix: ';'
-    },
-    react_file: {
-      prefix: `import React, {StyleSheet, Dimensions, PixelRatio} from "react-native";\n\nexport default StyleSheet.create(`,
-      suffix: ')'
-    },
-    javascript: {
-      prefix: '',
-      suffix: ';'
-    },
-    react: {
-      prefix: '',
-      suffix: ';'
-    }
-  }
 
   // Convertor unknown source (used in conjuction with errors to signify that the caller should be the one fitting the actual file in question there)
   static UNKNOWN_SOURCE = 'stdin';
@@ -573,7 +555,7 @@ export class Convertor {
   constructor() {
     this.includePaths = [];
     this.indentation = 2;
-    this.stringDelimiter = '\'';
+    this.setStringDelimiter('\'');
     this.forceEscapeProperty = true;
 
     // Configure sass.js
@@ -590,6 +572,26 @@ export class Convertor {
   // Allow usage of custom string delimiters (to allow ' and ")
   setStringDelimiter(delimiter) {
     this.stringDelimiter = delimiter;
+
+    // Redefine output formats
+    this.outputFormats = {
+      javascript_file: {
+        prefix: 'module.exports = ',
+        suffix: ';'
+      },
+      react_file: {
+        prefix: ['import { StyleSheet } from ', this.delimitString('react-native'), ';\n\nexport default StyleSheet.create('].join(''),
+        suffix: ');'
+      },
+      javascript: {
+        prefix: '',
+        suffix: ';'
+      },
+      react: {
+        prefix: '',
+        suffix: ';'
+      }
+    };
   }
 
   alwaysEscapeProperties(status) {
@@ -738,7 +740,7 @@ export class Convertor {
 
     // Normalize output format
     const how = Convertor.normalizeString(outputFormat);
-    if (how === undefined || !Convertor.outputFormats[how]) {
+    if (how === undefined || !this.outputFormats[how]) {
       throw new Error(`Invalid output format "${how}".`);
     }
 
@@ -800,7 +802,7 @@ export class Convertor {
     const list = Convertor.transform(parsed);
 
     return Promise.resolve({
-      formatted: errors.length === 0 ? `${Convertor.outputFormats[how].prefix}${this.to(list)}${Convertor.outputFormats[how].suffix}` : '',
+      formatted: errors.length === 0 ? `${this.outputFormats[how].prefix}${this.to(list)}${this.outputFormats[how].suffix}` : '',
       errors
     });
   }

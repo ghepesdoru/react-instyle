@@ -439,9 +439,9 @@ describe('SASS/SCSS/CSS Convertor', () => {
         const converted = c.convert(input, 'css', 'react_file');
         converted.then((conv) => {
           assert.equal(conv.errors.length, 0);
-          assert.equal(conv.formatted, `import React, {StyleSheet, Dimensions, PixelRatio} from "react-native";
+          assert.equal(conv.formatted, `import { StyleSheet } from 'react-native';
 
-export default StyleSheet.create({${output}})`);
+export default StyleSheet.create({${output}});`);
         });
       });
 
