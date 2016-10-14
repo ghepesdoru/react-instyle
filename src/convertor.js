@@ -942,14 +942,11 @@ export class Convertor {
         } else {
           part.push(value[i]);
         }
+      } else if (i === len - 1) {
+        part.push(value[i]);
+        parts.push(part.join(''));
       } else {
         part.push(value[i]);
-      }
-
-      if (i === len - 1) {
-        if (parts[parts.length - 1] !== part.join('')) {
-          parts.push(part.join(''));
-        }
       }
     }
 

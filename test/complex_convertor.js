@@ -332,6 +332,20 @@ describe('Complex conversions', () => {
     });
   });
 
+  it('Converts padding with unitless and missing elements', () => {
+    const c = new Convertor();
+
+    c.convert('.test { padding: 10% 0 0; }', 'css', 'javascript').then((ret) => {
+      assert.equal(ret.errors.length, 0);
+      assert.equal(ret.formatted, `
+{
+  'test': {
+    'padding': [{ 'unit': '%V', 'value': 0.1 }, { 'unit': 'px', 'value': 0 }, { 'unit': 'px', 'value': 0 }, { 'unit': 'px', 'value': 0 }]
+  }
+};`.trim());
+    });
+  });
+
   it('Converts box-shadow', () => {
     const c = new Convertor();
 
