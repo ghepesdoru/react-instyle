@@ -37,8 +37,8 @@
   "homepage": "https://github.com/ghepesdoru/react-instyle#readme",
   "dependencies": {
     "bluebird": "^3.4.6",
-    "css": "^2.2.1",
-    "sass.js": "^0.9.13"
+    "css": "^2.2.4",
+    "sass.js": "^0.10.11"
   },
   "scripts": {
     "lint": "eslint src test",
